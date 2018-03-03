@@ -1,3 +1,4 @@
-/alloc$regs.class
+/alloc$Line.class
 /alloc$Regs.class
-/alloc$ASpill.class
+/alloc.class
+/block3.i

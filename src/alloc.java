@@ -24,22 +24,19 @@ public class alloc {
 	*/
 	static class Regs {
 		int[] array;
-		int maxOffset;
 
 		Regs(int k){
 			this.array = new int[k];
-			this.maxOffset = 0;
 		}
 	}
 	
 	//takes register number and regs object and creates the spill Line to return, still must be added to code object
-	public static Line spill(int reg, Regs regs){
+	public static Line spill(int reg, int offset){
 		Line current = new Line();
 		current.instruction = "storeAI";
-		current.c = regs.maxOffset;
-		current.reg1 = reg;
+		current.c = offset;
+		current.reg1 = reg+1;
 		current.reg3 = 0;
-		regs.maxOffset = regs.maxOffset + 4;
 		return current;
 	}
 	
@@ -50,7 +47,7 @@ public class alloc {
 		current.instruction = "loadAI";
 		current.reg1 = 0;
 		current.c = offset;
-		current.reg1 = reg;
+		current.reg3 = reg+1;
 		return current;
 		
 	}
@@ -402,23 +399,27 @@ public class alloc {
 	            	default:
 	            		System.out.println("Line didn't parse properly");
 	            		return;
-	            	} 
-	            	
-	            	input.close();
-	            	
+	            	} 	            	
 	            }
+	            input.close();
+	            
 			} catch (FileNotFoundException e) {
 				System.out.println("Can't find the file, please make sure it's in the current directory.");
         		return;
 			}
 
+            
             Regs registers = new Regs(k);
             //TODO handling for when max_live < k-2
             
             if(type == 's'){
-            	//shrek
+            	//simple
             	int max = 0;
             	int reg = -1;
+//																			                for (int r = 0; r < counts.size(); r++) {
+//																			                	System.out.println(r + "\t" + counts.get(r));
+//																			                }
+//																			                System.out.println("-");
             	for (x = 0; x<k-2; x++){
             		for (int q = 1; q<counts.size(); q++){
             			if (counts.get(q)>max){
@@ -426,11 +427,22 @@ public class alloc {
             				reg = q;
             			}
             		}
+            		max = 0;
             		counts.set(reg, 0);
             		registers.array[x] = reg;
             	}
+//            	for (int i = 0; i<registers.array.length; i++) {
+//            		System.out.println(registers.array[i]);
+//            	}
             	boolean changed1, changed2, changed3;
-            	boolean bool = false;
+            	boolean bool = true;
+        		ArrayList<Integer> offsets = new ArrayList<Integer>();
+        		for (int o = 0; o < counts.size(); o++) {
+        			offsets.add(0);
+        		}
+        		int maxOffset = 0;
+        		int currentOffset = 0;
+        		Line ls;
             	for (x = 0; x < code.size(); x++){
             		/*
             		 * for each line do the following:
@@ -445,6 +457,22 @@ public class alloc {
             		 */
             		
             		current = code.get(x);
+            		if (registers.array[k-1] != 0 && !current.instruction.equals("output")) {
+            			//spill it
+            			currentOffset = offsets.get(registers.array[k-1]);
+    					if (currentOffset == 0) {
+    						maxOffset-=4;
+    						ls = spill(k-1,maxOffset);
+    						offsets.set(registers.array[k-1], maxOffset);
+    						code.add(x, ls);
+    						x++;
+    					}
+    					else {
+    						ls = spill(k-1,currentOffset);
+    						code.add(x, ls);
+    						x++;
+    					}
+            		}
 
             		if(current.instruction.equals("add") || current.instruction.equals("sub") || current.instruction.equals("mult") || current.instruction.equals("div") || current.instruction.equals("lshift") || current.instruction.equals("rshift")){
                 		changed1 = false;
@@ -464,7 +492,35 @@ public class alloc {
 	            				changed3 = true;
 	            			}
 	            		}
-            			//3 register op (don't forget about r0
+            			
+            			//this will break code for now
+            			
+//            			if(registers.array[k-2] == current.reg1 && changed1 == false) {
+//            				current.reg1 = k-1;
+//            				changed1 = true;
+//            			}
+//            			else if (registers.array[k-1] == current.reg1 && changed1 == false) {
+//            				current.reg1 = k;
+//            				changed1 = true;
+//            			}
+//            			if(registers.array[k-2] == current.reg2 && changed1 == false) {
+//            				current.reg2 = k-1;
+//            				changed2 = true;
+//            			}
+//            			else if (registers.array[k-1] == current.reg2 && changed1 == false) {
+//            				current.reg2 = k;
+//            				changed2 = true;
+//            			}
+//            			if(registers.array[k-2] == current.reg3 && changed1 == false) {
+//            				current.reg3 = k-1;
+//            				changed3 = true;
+//            			}
+//            			else if (registers.array[k-1] == current.reg3 && changed1 == false) {
+//            				current.reg3 = k;
+//            				changed3 = true;
+//            			}
+            			
+            			//3 register op
             			//shouldn't ever need this but can't hurt to ensure we leave weird instances of r0 alone
             			if(current.reg1 == 0)
             				changed1 = true;
@@ -474,8 +530,286 @@ public class alloc {
             				changed3 = true;
             			//everything else needs feasible registers, spill and load instructions work
             			
+            			if(!changed1 && !changed2 && !changed3) {
+            				if(registers.array[k-2] != 0) {
+            					currentOffset = offsets.get(registers.array[k-2]);
+            					if (currentOffset == 0) {
+            						maxOffset-=4;
+            						ls = spill(k-2,maxOffset);
+            						offsets.set(registers.array[k-2], maxOffset);
+            						code.add(x, ls);
+            						x++;
+            					}
+            					else {
+            						ls = spill(k-2,currentOffset);
+            						code.add(x, ls);
+            						x++;
+            					}
+            				}
+            				if(registers.array[k-1] != 0) {
+            					currentOffset = offsets.get(registers.array[k-1]);
+            					if (currentOffset == 0) {
+            						maxOffset-=4;
+            						ls = spill(k-1,maxOffset);
+            						offsets.set(registers.array[k-1], maxOffset);
+            						code.add(x, ls);
+            						x++;
+            					}
+            					else {
+            						ls = spill(k-1,currentOffset);
+            						code.add(x, ls);
+            						x++;
+            					}
+            				}
+        					//load
+//									            				System.out.println(offsets.get(current.reg1));
+//									            				System.out.println(offsets.get(current.reg2));
+//									            				System.out.println(current.reg1);
+//									            				System.out.println(current.reg2);
+            				if(offsets.get(current.reg1) != 0) {
+            					ls = load(k-2, offsets.get(current.reg1));
+            					code.add(x, ls);
+            					x++;
+            				}
+        					registers.array[k-2] = current.reg1;
+        					current.reg1 = k-1;
+        					//load
+            				if(offsets.get(current.reg2) != 0) {
+            					ls = load(k-1, offsets.get(current.reg2));
+            					code.add(x, ls);
+            					x++;
+            				}
+        					current.reg2 = k;
+        					
+        					registers.array[k-1] = current.reg3;
+        					current.reg3 = k;
+            			}
+            			else {
+            				if (!changed1 && !changed2) {
+                				if(registers.array[k-2] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-2]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-2,maxOffset);
+	            						offsets.set(registers.array[k-2], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-2,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg1) != 0) {
+                					ls = load(k-2, offsets.get(current.reg1));
+                					code.add(x, ls);
+                					x++;
+                				}
+            					registers.array[k-2] = current.reg1;
+            					current.reg1 = k-1;
+                				if(registers.array[k-1] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-1]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-1,maxOffset);
+	            						offsets.set(registers.array[k-1], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-1,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg2) != 0) {
+                					ls = load(k-1, offsets.get(current.reg2));
+                					code.add(x, ls);
+                					x++;
+                				}
+            					registers.array[k-1] = current.reg2;
+            					current.reg2 = k;
+            				}
+            				else if(!changed2 && !changed3) {
+                  				if(registers.array[k-2] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-2]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-2,maxOffset);
+    	            						offsets.set(registers.array[k-2], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-2,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+	                				if(offsets.get(current.reg2) != 0) {
+	                					ls = load(k-2, offsets.get(current.reg2));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[k-2] = current.reg2;
+                					current.reg2 = k-1;
+                    				if(registers.array[k-1] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-1]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-1,maxOffset);
+    	            						offsets.set(registers.array[k-1], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-1,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+                    				if(offsets.get(current.reg3) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+                    				}
+                    				registers.array[k-1] = current.reg3;
+                					current.reg3 = k;
+            				}
+            				else if (!changed1 && !changed3){
+                  				if(registers.array[k-2] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-2]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-2,maxOffset);
+    	            						offsets.set(registers.array[k-2], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-2,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+	                  				if(offsets.get(current.reg1) != 0) {
+	                					ls = load(k-2, offsets.get(current.reg1));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[k-2] = current.reg1;
+                					current.reg1 = k-1;
+                    				if(registers.array[k-1] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-1]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-1,maxOffset);
+    	            						offsets.set(registers.array[k-1], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-1,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+                    				if(offsets.get(current.reg3) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+                    				}
+                    				registers.array[k-1] = current.reg3;
+                					current.reg3 = k;
+            				}
+            				else {
+            					if(!changed1) {
+            						if(registers.array[k-2] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-2]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-2,maxOffset);
+    	            						offsets.set(registers.array[k-2], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-2,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+                    				if(offsets.get(current.reg1) != 0) {
+	                					ls = load(k-2, offsets.get(current.reg1));
+	                					code.add(x, ls);
+	                					x++;
+                    				}
+                					registers.array[k-2] = current.reg1;
+                					current.reg1 = k-1;
+            					}
+            					else if(!changed2) {
+            						if(registers.array[k-1] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-1]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-1,maxOffset);
+    	            						offsets.set(registers.array[k-1], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-1,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+                    				if(offsets.get(current.reg2) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg2));
+	                					code.add(x, ls);
+	                					x++;
+                    				}
+                					registers.array[k-1] = current.reg2;
+                					current.reg2 = k;
+            					}
+            					else if(!changed3) {
+                    				if(registers.array[k-1] != 0) {
+    	            					currentOffset = offsets.get(registers.array[k-1]);
+    	            					if (currentOffset == 0) {
+    	            						maxOffset-=4;
+    	            						ls = spill(k-1,maxOffset);
+    	            						offsets.set(registers.array[k-1], maxOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+    	            					else {
+    	            						ls = spill(k-1,currentOffset);
+    	            						code.add(x, ls);
+    	            						x++;
+    	            					}
+                    				}
+                					//load
+                    				if(offsets.get(current.reg3) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+                    				}
+                    				registers.array[k-1] = current.reg3;
+                					current.reg3 = k;
+            					}
+            				}
+            			}	
             		}
             		else if(current.instruction.equals("load") || current.instruction.equals("store") || current.instruction.equals("loadAI") || current.instruction.equals("storeAI")){
+            			//2 register op
             			changed1 = false;
                 		changed3 = false;
             			for (int q = 0; q<k-2; q++){
@@ -488,20 +822,186 @@ public class alloc {
 	            				changed3 = true;
 	            			}
             			}
-            			//2 register op (don't forget about r0
+            			if(current.reg1 == 0)
+            				changed1 = true;
+            			if(current.reg3 == 0)
+            				changed3 = true;
+            			
+            			if(!changed1 && !changed3) {
+              				if(registers.array[k-2] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-2]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-2,maxOffset);
+	            						offsets.set(registers.array[k-2], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-2,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                  				if(offsets.get(current.reg1) != 0) {
+                					ls = load(k-2, offsets.get(current.reg1));
+                					code.add(x, ls);
+                					x++;
+                				}
+            					registers.array[k-2] = current.reg1;
+            					current.reg1 = k-1;
+                				if(registers.array[k-1] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-1]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-1,maxOffset);
+	            						offsets.set(registers.array[k-1], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-1,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg3) != 0) {
+                					ls = load(k-1, offsets.get(current.reg3));
+                					code.add(x, ls);
+                					x++;
+                				}
+                				registers.array[k-1] = current.reg3;
+            					current.reg3 = k;
+            			}
+            			else {
+            				if(!changed1) {
+        						if(registers.array[k-2] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-2]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-2,maxOffset);
+	            						offsets.set(registers.array[k-2], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-2,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg1) != 0) {
+                					ls = load(k-2, offsets.get(current.reg1));
+                					code.add(x, ls);
+                					x++;
+                				}
+            					registers.array[k-2] = current.reg1;
+            					current.reg1 = k-1;
+            				}
+            				else if (!changed3) {
+                				if(registers.array[k-1] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-1]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-1,maxOffset);
+	            						offsets.set(registers.array[k-1], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-1,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg3) != 0) {
+                					ls = load(k-1, offsets.get(current.reg3));
+                					code.add(x, ls);
+                					x++;
+                				}
+                				registers.array[k-1] = current.reg3;
+            					current.reg3 = k;
+            				}
+            			}
             		}
             		else if(current.instruction.equals("loadI")){
+            			//1 register op
             			changed1 = false;
             			for (int q = 0; q<k-2; q++){
-	            			if (registers.array[q] == current.reg1 && changed1 == false){
-	            				current.reg1 = q+1;
+	            			if (registers.array[q] == current.reg3 && changed1 == false){
+	            				current.reg3 = q+1;
 	            				changed1 = true;
 	            			}
             			}
-            			//1 register op (don't forget about r0(?)
+            			
+            			if(current.reg3 == 0)
+            				changed1 = true;
+            			
+            			if(!changed1) {
+            				if(bool) {
+            					bool = false;
+	            				if(registers.array[k-2] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-2]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-2,maxOffset);
+	            						offsets.set(registers.array[k-2], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-2,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            				}
+	        					//load
+	            				if(offsets.get(current.reg3) != 0) {
+	            					ls = load(k-2, offsets.get(current.reg3));
+	            					code.add(x, ls);
+	            					x++;
+	            				}
+	        					registers.array[k-2] = current.reg3;
+	        					current.reg3 = k-1;
+	            			}
+            				else {
+            					bool = true;
+                				if(registers.array[k-1] != 0) {
+	            					currentOffset = offsets.get(registers.array[k-1]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(k-1,maxOffset);
+	            						offsets.set(registers.array[k-1], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(k-1,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+                				}
+            					//load
+                				if(offsets.get(current.reg3) != 0) {
+                					ls = load(k-1, offsets.get(current.reg3));
+                					code.add(x, ls);
+                					x++;
+                				}
+                				registers.array[k-1] = current.reg3;
+            					current.reg3 = k;
+        					}
+            			}
             		}
             		//else nothing, nothing needed for output operation
+        			code.set(x, current);
             	}
+                for (int r = 0; r < offsets.size(); r++) {
+                	//System.out.println(r + "\t" + offsets.get(r));
+                }
             }
             else if(type == 'b'){
             	//bottom-up
