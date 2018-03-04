@@ -92,6 +92,62 @@ public class alloc {
 		return maxLive;
 	}
 	
+	public static ArrayList<Max> BuildAppearances (ArrayList<Line> code){
+		
+		Line current;
+		ArrayList<Max> appearances = new ArrayList<Max>();
+		appearances.add(new Max());
+		for(int x = 1; x < code.size(); x++) {
+			//for each line, take each register, add it to appearances, and populate the "liveRegisters" with where each register appears
+			current = code.get(x);
+			if(current.reg1 != -1 && current.reg1 != 0) {
+				while(appearances.size() < current.reg1+1) {
+					appearances.add(new Max());
+				}
+				appearances.get(current.reg1).liveRegisters.add(x);
+				appearances.get(current.reg1).numLive++;
+			}
+			if(current.reg2 != -1 && current.reg2 != 0) {
+				while(appearances.size() < current.reg2+1) {
+					appearances.add(new Max());
+				}
+				appearances.get(current.reg2).liveRegisters.add(x);
+				appearances.get(current.reg2).numLive++;
+			}
+			if(current.reg3 != -1 && current.reg3 != 0) {
+				while(appearances.size() < current.reg3+1) {
+					appearances.add(new Max());
+				}
+				appearances.get(current.reg3).liveRegisters.add(x);
+				appearances.get(current.reg3).numLive++;
+			}
+		}
+		return appearances;
+	}
+	
+	/*
+	 * returns index + 1 of the thing to replace, negative if it doesn't need to be spilled, positive otherwise
+	 */
+	public static int findReplacement(int[] array, ArrayList<Max> appearances, int currentLine) {
+		int maxDistance = -50;
+		int index = 0;
+		for (int y = 0; y < array.length; y++) {
+			if(appearances.get(array[y]).numLive == 0)
+				return ((y+1)*-1);
+			if(appearances.get(array[y]).numLive >= 1) {
+				if(appearances.get(array[y]).liveRegisters.get(0)-currentLine == -1 && appearances.get(array[y]).numLive > 1) {
+					maxDistance = appearances.get(array[y]).liveRegisters.get(1)-currentLine;
+					index = (y+1);
+				}
+				else if(appearances.get(array[y]).liveRegisters.get(0)-currentLine > maxDistance) {
+					maxDistance = appearances.get(array[y]).liveRegisters.get(0)-currentLine;
+					index = (y+1);
+				}
+			}
+		}
+		return index;
+	}
+	
 	
     public static void printCode(ArrayList<Line> code) {
     	Line current;
@@ -1047,10 +1103,6 @@ public class alloc {
             else if(type == 'b'){	//TODO type b
             	//bottom-up
 	            //start parsing file
-	        	ArrayList<Integer> counts = new ArrayList<Integer>();
-	        	int x = 0;
-	        	counts.add(x);        	
-	        	//at each index e, counts[e] = number of times re is seen in the iloc code
 	        
 	        	String line;
 	        	String token;
@@ -1076,231 +1128,119 @@ public class alloc {
 		            	current.instruction = token;
 		            	switch (current.instruction) {
 		            	case "loadI":	//only reg3
-		            		token=a.nextToken();
+		            		token = a.nextToken();
 		            		current.c = Integer.parseInt(token);
 		            		token = a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "add":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "sub":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "lshift":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "rshift":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "load":	//1 and 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token = a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "loadAI":		//1 and 3, 1 is always r0
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
-		            		token = a.nextToken();
-		            		current.c = Integer.parseInt(token);
 		            		token = a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "store":	//1 and 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token = a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "storeAI":		//1 and 3, 3 is always r0
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
-		            		token = a.nextToken();
-		            		current.c = Integer.parseInt(token);
 		            		token = a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "mult":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "div":	//all 3
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg1 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg1) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg1, counts.get(current.reg1)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg2 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg2) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg2, counts.get(current.reg2)+1);
 		            		token=a.nextToken();
 		            		token = token.substring(1);
 		            		current.reg3 = Integer.parseInt(token);
-		            		while(counts.size()<=current.reg3) {
-		            			counts.add(x);
-		            		}
-		            		counts.set(current.reg3, counts.get(current.reg3)+1);
 		            		code.add(current);
 		            		break;
 		            	case "output":
@@ -1314,6 +1254,214 @@ public class alloc {
 		            	} 	            	
 		            }
 		            input.close();
+		            
+		            ArrayList<Max> appearances = BuildAppearances(code);
+		            
+	            	Regs registers = new Regs(k);
+	            	ArrayList<Integer> offsets = new ArrayList<Integer>();
+	        		for (int o = 0; o < appearances.size(); o++) {
+	        			offsets.add(0);
+	        		}
+	            	int maxOffset = 0;
+	        		int currentOffset = 0;
+	        		Line ls;
+	        		int iterations = 0;
+	        		boolean found = false;
+	        		int toReplace;
+	            	for (int x = 0; x < code.size(); x++){
+	            		current = code.get(x);
+	            		iterations++;
+	            		System.out.println(iterations);
+	            		/* For each line do the following:
+	            		 * 
+	            		 * for each register that isn't -1
+	            		 * 		search array to see if it's there
+	            		 * 			if it is, current.regx = array index
+	            		 * 			else, find the one to replace, spill it (if necessary), load into that array index
+	            		 */
+	            		
+	            		if(current.reg1 != -1 && current.reg1 != 0) {
+	            			found = false;
+	            			for (int i = 0; i < registers.array.length; i++) {
+	            				if(registers.array[i] == current.reg1) {
+	            					current.reg1 = i+1;
+	            					found = true;
+	            					break;
+	            				}
+	            			}
+	            			if(!found) {
+            					toReplace = findReplacement(registers.array, appearances, iterations);
+            					//System.out.print(toReplace);
+            					if(toReplace < 0) {
+            						//no need to spill
+            						toReplace = Math.abs(toReplace);
+            						toReplace--;
+            						
+            						//load
+            						if(offsets.get(current.reg1) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg1));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg1;
+                					current.reg1 = toReplace+1;	
+            					}
+            					else if (toReplace > 0) {
+            						toReplace--;
+            						//spill
+            						currentOffset = offsets.get(registers.array[toReplace]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(toReplace,maxOffset);
+	            						offsets.set(registers.array[toReplace], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(toReplace,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					
+	            					//load
+            						if(offsets.get(current.reg1) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg1));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg1;
+                					current.reg1 = toReplace+1;
+            					}
+	            			}
+	            		}
+	            		
+	            		if(current.reg2 != -1 && current.reg2 != 0) {
+	            			found = false;
+	            			for (int i = 0; i < registers.array.length; i++) {
+	            				if(registers.array[i] == current.reg2) {
+	            					current.reg2 = i+1;
+	            					found = true;
+	            					break;
+	            				}
+	            			}
+	            			if(!found) {
+            					toReplace = findReplacement(registers.array, appearances, iterations);
+            					//System.out.print(toReplace);
+            					if(toReplace < 0) {
+            						//no need to spill
+            						toReplace = Math.abs(toReplace);
+            						toReplace--;
+            						
+            						//load
+            						if(offsets.get(current.reg2) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg2));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg2;
+                					current.reg2 = toReplace+1;	
+            					}
+            					else if (toReplace > 0) {
+            						toReplace--;
+            						//spill
+            						currentOffset = offsets.get(registers.array[toReplace]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(toReplace,maxOffset);
+	            						offsets.set(registers.array[toReplace], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(toReplace,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					
+	            					//load
+            						if(offsets.get(current.reg2) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg2));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg2;
+                					current.reg2 = toReplace+1;
+            					}
+	            			}
+	            		}
+	            		
+	            		if(current.reg3 != -1 && current.reg3 != 0) {
+	            			found = false;
+	            			for (int i = 0; i < registers.array.length; i++) {
+	            				if(registers.array[i] == current.reg3) {
+	            					current.reg3 = i+1;
+	            					found = true;
+	            					break;
+	            				}
+	            			}
+	            			if(!found) {
+            					toReplace = findReplacement(registers.array, appearances, iterations);
+            					//System.out.print(toReplace);
+            					if(toReplace < 0) {
+            						//no need to spill
+            						toReplace = Math.abs(toReplace);
+            						toReplace--;
+            						
+            						//load
+            						if(offsets.get(current.reg3) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg3;
+                					current.reg3 = toReplace+1;	
+            					}
+            					else if (toReplace > 0) {
+            						toReplace--;
+            						//spill
+            						currentOffset = offsets.get(registers.array[toReplace]);
+	            					if (currentOffset == 0) {
+	            						maxOffset-=4;
+	            						ls = spill(toReplace,maxOffset);
+	            						offsets.set(registers.array[toReplace], maxOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					else {
+	            						ls = spill(toReplace,currentOffset);
+	            						code.add(x, ls);
+	            						x++;
+	            					}
+	            					
+	            					//load
+            						if(offsets.get(current.reg3) != 0) {
+	                					ls = load(toReplace, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+                					registers.array[toReplace] = current.reg3;
+                					current.reg3 = toReplace+1;
+            					}
+            					else {
+            						
+            					}
+	            			}
+	            			if(current.reg1 != -1 && current.reg1 != 0) {
+	        					appearances.get(registers.array[current.reg1-1]).numLive--;
+	        					if(appearances.get(registers.array[current.reg1-1]).numLive>=0)
+	        						appearances.get(registers.array[current.reg1-1]).liveRegisters.remove(0);
+	            			}
+	            			if(current.reg2 != -1 && current.reg2 != 0) {
+	        					appearances.get(registers.array[current.reg2-1]).numLive--;
+	        					if(appearances.get(registers.array[current.reg2-1]).numLive>=0)
+	        						appearances.get(registers.array[current.reg2-1]).liveRegisters.remove(0);
+	            			}
+        					appearances.get(registers.array[current.reg3-1]).numLive--;
+        					if(appearances.get(registers.array[current.reg3-1]).numLive>=0)
+        						appearances.get(registers.array[current.reg3-1]).liveRegisters.remove(0);
+	            		}
+		            	code.set(x, current);
+	            	}
 		            
 				} catch (FileNotFoundException e) {
 					System.out.println("Can't find the file, please make sure it's in the current directory.");
