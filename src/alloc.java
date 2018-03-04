@@ -132,16 +132,24 @@ public class alloc {
 		int maxDistance = -50;
 		int index = 0;
 		for (int y = 0; y < array.length; y++) {
+			//for each currently existing register:
+			//if its liverange is over, return that
+			//else, return the index of the register that isn't used for the longest time
+			
 			if(appearances.get(array[y]).numLive == 0)
 				return ((y+1)*-1);
-			if(appearances.get(array[y]).numLive >= 1) {
-				if(appearances.get(array[y]).liveRegisters.get(0)-currentLine == -1 && appearances.get(array[y]).numLive > 1) {
-					maxDistance = appearances.get(array[y]).liveRegisters.get(1)-currentLine;
-					index = (y+1);
+			//calculate index that isn't used for the longest time
+			
+			if(appearances.get(array[y]).numLive > 1){
+				if(appearances.get(array[y]).liveRegisters.get(1) > maxDistance){
+					maxDistance = appearances.get(array[y]).liveRegisters.get(1);
+					index = y+1;
 				}
-				else if(appearances.get(array[y]).liveRegisters.get(0)-currentLine > maxDistance) {
-					maxDistance = appearances.get(array[y]).liveRegisters.get(0)-currentLine;
-					index = (y+1);
+			}
+			else if (appearances.get(array[y]).numLive == 1){
+				if(appearances.get(array[y]).liveRegisters.get(0) > maxDistance && appearances.get(array[y]).liveRegisters.get(0) > currentLine){
+					maxDistance = appearances.get(array[y]).liveRegisters.get(0);
+					index = y+1;
 				}
 			}
 		}
