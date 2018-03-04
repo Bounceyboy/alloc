@@ -140,17 +140,13 @@ public class alloc {
 				return ((y+1)*-1);
 			//calculate index that isn't used for the longest time
 			
-			if(appearances.get(array[y]).numLive > 1){
-				if(appearances.get(array[y]).liveRegisters.get(1) > maxDistance){
-					maxDistance = appearances.get(array[y]).liveRegisters.get(1);
-					index = y+1;
-				}
-			}
-			else if (appearances.get(array[y]).numLive == 1){
-				if(appearances.get(array[y]).liveRegisters.get(0) > maxDistance && appearances.get(array[y]).liveRegisters.get(0) > currentLine){
+			if(appearances.get(array[y]).liveRegisters.get(0) >= currentLine) {
+				//use it
+				if(appearances.get(array[y]).liveRegisters.get(0) > maxDistance) {
 					maxDistance = appearances.get(array[y]).liveRegisters.get(0);
 					index = y+1;
 				}
+				
 			}
 		}
 		return index;
@@ -1279,7 +1275,7 @@ public class alloc {
 	            	for (int x = 0; x < code.size(); x++){
 	            		current = code.get(x);
 	            		iterations++;
-	            		System.out.println(iterations);
+	            		//System.out.println(iterations);
 	            		/* For each line do the following:
 	            		 * 
 	            		 * for each register that isn't -1
