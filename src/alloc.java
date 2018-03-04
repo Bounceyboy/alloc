@@ -30,6 +30,25 @@ public class alloc {
 		}
 	}
 	
+	static class Reg {
+		int liveStart, liveEnd;
+		boolean spill;
+		Reg(){
+			this.liveStart = -1;
+			this.liveEnd = -1;
+			this.spill = false;
+		}
+	}
+	
+	static class Max {
+		int numLive;
+		ArrayList<Integer> liveRegisters;
+		Max(){
+			this.numLive = 0;
+			this.liveRegisters = new ArrayList<Integer>();
+		}
+	}
+	
 	//takes register number and regs object and creates the spill Line to return, still must be added to code object
 	public static Line spill(int reg, int offset){
 		Line current = new Line();
@@ -51,6 +70,28 @@ public class alloc {
 		return current;
 		
 	}
+	
+	//takes arraylist of ranges and maxlive arraylist, populates maxlive, returns it
+	public static ArrayList<Max> CalcMaxLive(ArrayList<Reg> regs, ArrayList<Max> maxLive){
+		int s = maxLive.size();
+		maxLive.clear();
+		for (int w = 0; w < s; w++) {
+			maxLive.add(new Max());
+		}
+		Max current;
+		for(int y = 1; y<regs.size(); y++) {
+			if(!regs.get(y).spill) {
+				for(int x = regs.get(y).liveStart; x< regs.get(y).liveEnd; x++) {
+					current = maxLive.get(x);
+					current.numLive++;
+					current.liveRegisters.add(y);
+				}
+			}
+		}
+		
+		return maxLive;
+	}
+	
 	
     public static void printCode(ArrayList<Line> code) {
     	Line current;
@@ -131,295 +172,294 @@ public class alloc {
         	}
         	
         	String filename = args[2];
-        	File file = new File(filename);        	
-        	//inputs stored -> type, k, and file/filename
-        	
-            //start parsing file
+        	File file = new File(filename);        
         	ArrayList<Line> code = new ArrayList<Line>();
-        	ArrayList<Integer> counts = new ArrayList<Integer>();
-        	int x = 0;
-        	counts.add(x);        	
-        	//at each index e, counts[e] = number of times re is seen in the iloc code
-        
-        	String line;
-        	String token;
-        	Line current;
-            try {
-				Scanner input = new Scanner(file);
-	            while(input.hasNext()) {
-	            	//for each line
-	            	line = input.nextLine();
-	            	//current.instruction
-	            		//System.out.println(line);
-	            	if(line.equals(""))
-	            		continue;
-	            	
-	            	StringTokenizer a = new StringTokenizer(line, "\t ,=>");
-	            	token = a.nextToken();   	
-	            	if(token.equals("//"))
-	            		continue;
-	            	
-	            	//store instruction
-	            	current = new Line();
-	            	current.instruction = token;
-	            	switch (current.instruction) {
-	            	case "loadI":	//only reg3
-	            		token=a.nextToken();
-	            		current.c = Integer.parseInt(token);
-	            		token = a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "add":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "sub":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "lshift":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "rshift":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "load":	//1 and 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token = a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "loadAI":		//1 and 3, 1 is always r0
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token = a.nextToken();
-	            		current.c = Integer.parseInt(token);
-	            		token = a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "store":	//1 and 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token = a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "storeAI":		//1 and 3, 3 is always r0
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token = a.nextToken();
-	            		current.c = Integer.parseInt(token);
-	            		token = a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "mult":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "div":	//all 3
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg1 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg1) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg1, counts.get(current.reg1)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg2 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg2) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg2, counts.get(current.reg2)+1);
-	            		token=a.nextToken();
-	            		token = token.substring(1);
-	            		current.reg3 = Integer.parseInt(token);
-	            		while(counts.size()<=current.reg3) {
-	            			counts.add(x);
-	            		}
-	            		counts.set(current.reg3, counts.get(current.reg3)+1);
-	            		code.add(current);
-	            		break;
-	            	case "output":
-	            		token = a.nextToken();
-	            		current.c = Integer.parseInt(token);
-	            		code.add(current);
-	            		break;
-	            	default:
-	            		System.out.println("Line didn't parse properly");
-	            		return;
-	            	} 	            	
-	            }
-	            input.close();
+        	//inputs stored -> type, k, and file/filename
+            if(type == 's'){	//TODO type s - complete (can optimize a lot of instructions though)
+	            //start parsing file
+	        	ArrayList<Integer> counts = new ArrayList<Integer>();
+	        	int x = 0;
+	        	counts.add(x);        	
+	        	//at each index e, counts[e] = number of times re is seen in the iloc code
+	        
+	        	String line;
+	        	String token;
+	        	Line current;
+	        	
+	            try {
+					Scanner input = new Scanner(file);
+		            while(input.hasNext()) {
+		            	//for each line
+		            	line = input.nextLine();
+		            	//current.instruction
+		            		//System.out.println(line);
+		            	if(line.equals(""))
+		            		continue;
+		            	
+		            	StringTokenizer a = new StringTokenizer(line, "\t ,=>");
+		            	token = a.nextToken();   	
+		            	if(token.equals("//"))
+		            		continue;
+		            	
+		            	//store instruction
+		            	current = new Line();
+		            	current.instruction = token;
+		            	switch (current.instruction) {
+		            	case "loadI":	//only reg3
+		            		token=a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "add":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "sub":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "lshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "rshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "load":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "loadAI":		//1 and 3, 1 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "store":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "storeAI":		//1 and 3, 3 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "mult":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "div":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "output":
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		code.add(current);
+		            		break;
+		            	default:
+		            		System.out.println("Line didn't parse properly");
+		            		return;
+		            	} 	            	
+		            }
+		            input.close();
+		            
+				} catch (FileNotFoundException e) {
+					System.out.println("Can't find the file, please make sure it's in the current directory.");
+	        		return;
+				}
+	
 	            
-			} catch (FileNotFoundException e) {
-				System.out.println("Can't find the file, please make sure it's in the current directory.");
-        		return;
-			}
-
-            
-            Regs registers = new Regs(k);
-            //TODO handling for when max_live < k-2
-            
-            if(type == 's'){
-            	//simple
-            	int max = 0;
-            	int reg = -1;
-//																			                for (int r = 0; r < counts.size(); r++) {
-//																			                	System.out.println(r + "\t" + counts.get(r));
-//																			                }
-//																			                System.out.println("-");
+	            Regs registers = new Regs(k);
+	            
+	            	//simple
+	            	int max = 0;
+	            	int reg = -1;
+	//																			                for (int r = 0; r < counts.size(); r++) {
+	//																			                	System.out.println(r + "\t" + counts.get(r));
+	//																			                }
+	//																			                System.out.println("-");
             	for (x = 0; x<k-2; x++){
             		for (int q = 1; q<counts.size(); q++){
             			if (counts.get(q)>max){
@@ -1003,11 +1043,957 @@ public class alloc {
                 	//System.out.println(r + "\t" + offsets.get(r));
                 }
             }
-            else if(type == 'b'){
+            
+            else if(type == 'b'){	//TODO type b
             	//bottom-up
+	            //start parsing file
+	        	ArrayList<Integer> counts = new ArrayList<Integer>();
+	        	int x = 0;
+	        	counts.add(x);        	
+	        	//at each index e, counts[e] = number of times re is seen in the iloc code
+	        
+	        	String line;
+	        	String token;
+	        	Line current;
+	        	
+	            try {
+					Scanner input = new Scanner(file);
+		            while(input.hasNext()) {
+		            	//for each line
+		            	line = input.nextLine();
+		            	//current.instruction
+		            		//System.out.println(line);
+		            	if(line.equals(""))
+		            		continue;
+		            	
+		            	StringTokenizer a = new StringTokenizer(line, "\t ,=>");
+		            	token = a.nextToken();   	
+		            	if(token.equals("//"))
+		            		continue;
+		            	
+		            	//store instruction
+		            	current = new Line();
+		            	current.instruction = token;
+		            	switch (current.instruction) {
+		            	case "loadI":	//only reg3
+		            		token=a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "add":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "sub":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "lshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "rshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "load":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "loadAI":		//1 and 3, 1 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "store":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "storeAI":		//1 and 3, 3 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "mult":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "div":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            		}
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "output":
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		code.add(current);
+		            		break;
+		            	default:
+		            		System.out.println("Line didn't parse properly");
+		            		return;
+		            	} 	            	
+		            }
+		            input.close();
+		            
+				} catch (FileNotFoundException e) {
+					System.out.println("Can't find the file, please make sure it's in the current directory.");
+	        		return;
+				}
+	
+	            
             }
-            else {
-            	//top-down ugh
+            else {	//TODO top-down
+            	//top-down
+	            //start parsing file
+            	ArrayList<Reg> ranges = new ArrayList<Reg>();
+	        	ArrayList<Integer> counts = new ArrayList<Integer>();
+	        	ArrayList<Max> maxLive = new ArrayList<Max>();
+	        	int x = 0;
+	        	counts.add(x);        	
+	        	ranges.add(new Reg());
+	        	//at each index e, counts[e] = number of times re is seen in the iloc code
+	        
+	        	String line;
+	        	String token;
+	        	Line current;
+	        	Reg reg;
+	        	
+	            try {
+					Scanner input = new Scanner(file);
+		            while(input.hasNext()) {
+		            	//for each line
+		            	line = input.nextLine();
+		            	//current.instruction
+		            		//System.out.println(line);
+		            	if(line.equals(""))
+		            		continue;
+		            	
+		            	StringTokenizer a = new StringTokenizer(line, "\t ,=>");
+		            	token = a.nextToken();   	
+		            	if(token.equals("//"))
+		            		continue;
+		            	
+		            	//store instruction
+		            	maxLive.add(new Max());
+																				//System.out.println(maxLive.size());
+		            	current = new Line();
+		            	current.instruction = token;
+		            	switch (current.instruction) {
+		            	case "loadI":	//only reg3
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "add":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "sub":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "lshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "rshift":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "load":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "loadAI":		//1 and 3, 1 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "store":	//1 and 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "storeAI":		//1 and 3, 3 is always r0
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token = a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "mult":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg1);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "div":	//all 3
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg1 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg1) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg1, counts.get(current.reg1)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg2 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg2) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg2);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg2, counts.get(current.reg2)+1);
+		            		token=a.nextToken();
+		            		token = token.substring(1);
+		            		current.reg3 = Integer.parseInt(token);
+		            		while(counts.size()<=current.reg3) {
+		            			counts.add(x);
+		            			ranges.add(new Reg());
+		            		}
+		            		reg = ranges.get(current.reg3);
+		            		if(reg.liveStart == -1) {
+		            			reg.liveStart = maxLive.size();
+		            			reg.liveEnd = reg.liveStart;
+		            		}
+		            		else
+		            			reg.liveEnd = maxLive.size();
+		            		counts.set(current.reg3, counts.get(current.reg3)+1);
+		            		code.add(current);
+		            		break;
+		            	case "output":
+		            		token = a.nextToken();
+		            		current.c = Integer.parseInt(token);
+		            		code.add(current);
+		            		break;
+		            	default:
+		            		System.out.println("Line didn't parse properly");
+		            		return;
+		            	} 	            	
+		            }
+		            input.close();
+		            
+		            maxLive = CalcMaxLive(ranges, maxLive);
+		            
+		            int maximum = 0;
+		            
+		            for (Max theOne : maxLive) {
+		            	if(theOne.numLive > maximum)
+		            		maximum = theOne.numLive;
+		            }
+		            //maximum == real MAX_LIVE
+		            
+		            if(maximum > k-2) {
+		            	/*	rest of code will go in here.
+		            	 * 	for each line in maxLive
+		            	 * if Max.numLive > k-2, spill the one with fewest uses, if tied, spill the one with the longest live range
+		            	 * when spilling, set spill = true, line after assignment it must spill
+		            	 * 
+		            	 * then, once spilled variables are known, add those lines to the code (they get permanently moved to k-2 or k-1, get stored/loaded every use)
+		            	 * then, assign registers to physical registers, each time a new one is introduced, overwrite the one that just left its live range
+		            	 */
+		            	int toSpill;
+		            	
+		            	while(maximum > k-2) {
+		            		for(Max a : maxLive) {
+		            			if(a.numLive > k-2) {
+		            				toSpill = a.liveRegisters.get(0);
+		            				for(int z = 1; z<a.numLive; z++) {
+		            					if(counts.get(a.liveRegisters.get(z)) < counts.get(toSpill))
+		            						toSpill = a.liveRegisters.get(z);
+		            					else if(counts.get(a.liveRegisters.get(z)) == counts.get(toSpill)) {
+		            						if((ranges.get(a.liveRegisters.get(z)).liveEnd-ranges.get(a.liveRegisters.get(z)).liveStart) > (ranges.get(toSpill).liveEnd-ranges.get(toSpill).liveStart))
+		            							toSpill = a.liveRegisters.get(z);
+		            					}
+		            				}
+		            				//toSpill = register number to spill
+//																													System.out.println(toSpill + "\n-");
+		            				ranges.get(toSpill).spill = true;
+		            				break;
+		            			}
+		            		}
+//																										            for(Max index : maxLive) {
+//																										            	System.out.println(index.liveRegisters.toString());
+//																										            }
+//																										            System.out.println("-");
+		            		maxLive = CalcMaxLive(ranges,maxLive);
+		            		maximum = 0;
+		            		for (Max theOne : maxLive) {
+				            	if(theOne.numLive > maximum)
+				            		maximum = theOne.numLive;
+				            }
+		            	}
+//																										            for(Max index : maxLive) {
+//																										            	System.out.println(index.liveRegisters.toString());
+//																										            }
+//																										            System.out.println("-");
+		            	
+		            	//now build code, if a spill, always save/load when it's used
+		            	Regs registers = new Regs(k);
+		            	ArrayList<Integer> offsets = new ArrayList<Integer>();
+		        		for (int o = 0; o < counts.size(); o++) {
+		        			offsets.add(0);
+		        		}
+		            	int maxOffset = 0;
+		        		int currentOffset = 0;
+		        		Line ls;
+		        		int iterations = 0;
+		            	for (x = 0; x < code.size(); x++){
+		            		current = code.get(x);
+		            		iterations++;
+		            		/*
+		            		 * for each line do the following:
+		            		 * if reg3 is spilled, add a line to storeAI after it's assigned
+		            		 * if reg1 AND reg2 are spilled, add a line to loadAI before it's used for each (reg1 -> k-2, reg2 -> k-1)
+		            		 * if reg1 EXOR reg2 are spilled, add a line to loadAI before it's used (into k-2)
+		            		 * for all non-spilled, find a physical register (0 through k-2). If already has one, leave it. Otherwise, overwrite the one outside of its live range (bc it's ded)
+		            		 */
+		            		
+		            		
+
+		            		if(current.reg1 != -1 && current.reg1 != 0) {
+		            			if(ranges.get(current.reg1).spill) {
+		            				//load
+		            				if(offsets.get(current.reg1) != 0) {
+	                					ls = load(k-2, offsets.get(current.reg1));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+	            					registers.array[k-2] = current.reg1;
+	            					current.reg1 = k-1;
+		            			}
+		            			else {
+		            				//find and set to the proper register
+			            			for (int r = 0; r < k-2; r++) {
+			            				if(current.reg1 == registers.array[r]) {
+			            					current.reg1 = r+1;
+			            					break;
+			            				}
+			            			}
+		            			}
+		            		}
+		            		if(current.reg2 != -1 && current.reg2 != 0) {
+	            				if(ranges.get(current.reg2).spill) {
+	            					if(offsets.get(current.reg2) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg2));
+	                					code.add(x, ls);
+	                					x++;
+	                				}
+	            					registers.array[k-1] = current.reg2;
+	            					current.reg2 = k;
+		            			}
+		            			else {
+		            				//find and set to the proper register
+			            			for (int r = 0; r < k-2; r++) {
+			            				if(current.reg2 == registers.array[r]) {
+			            					current.reg2 = r+1;
+			            					break;
+			            				}
+			            			}
+		            			}
+		            		}
+ 		            		if(current.reg3!=-1 && current.reg3 != 0) {
+			            		if(ranges.get(current.reg3).spill) {
+		            				//load
+		            				if(offsets.get(current.reg3) != 0) {
+	                					ls = load(k-1, offsets.get(current.reg3));
+	                					code.add(x, ls);
+	                					x++;
+	                				}	            					
+			            			registers.array[k-1] = current.reg3;
+			            			current.reg3 = k;
+			            			currentOffset = offsets.get(registers.array[k-1]);
+			    					if (currentOffset == 0) {
+			    						maxOffset-=4;
+			    						ls = spill(k-1,maxOffset);
+			    						offsets.set(registers.array[k-1], maxOffset);
+			    						code.add(x+1, ls);
+			    						x++;
+			    					}
+			    					else {
+			    						ls = spill(k-1,currentOffset);
+			    						code.add(x+1, ls);
+			    						x++;
+			    					}
+			            		}
+			            		else {
+			            			//search registers
+			            			boolean found = false;
+			            			for (int r = 0; r < k-2; r++) {
+			            				if(current.reg3 == registers.array[r]) {
+			            					found = true;
+			            					current.reg3 = r+1;
+			            					break;
+			            				}
+			            			}
+			            			if(!found) {
+//			            				if(current.instruction.equals("load")) {
+//			            					for(int r = 0; r < k-2; r++) {
+//				            					if(iterations >= ranges.get(registers.array[r]).liveEnd && current.reg1 != r+1) {
+//				            						registers.array[r] = current.reg3;
+//				            						current.reg3 = r+1;
+//				            						break;
+//				            					}
+//			            				}
+//			            				}
+//			            				else {
+			            					for(int r = 0; r < k-2; r++) {
+			            					if(iterations >= ranges.get(registers.array[r]).liveEnd) {
+			            						registers.array[r] = current.reg3;
+			            						current.reg3 = r+1;
+			            						break;
+			            					}
+			            				}
+			            			}
+			            		}
+		            		}
+		            	}
+		            }
+		            
+				} catch (FileNotFoundException e) {
+					System.out.println("Can't find the file, please make sure it's in the current directory.");
+	        		return;
+				}
+	
+	            
             }
 			
             printCode(code);
